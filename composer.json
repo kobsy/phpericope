@@ -1,0 +1,16 @@
+{
+    "name": "kobsy/phpericope",
+    "description": "PHP port of Pericope Ruby gem",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Matthew Kobs",
+            "email": "matt.kobs@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {"PHPericope\\": "src/"}
+    }
+}
