@@ -1,5 +1,5 @@
 <?php
-namespace PHPericope\Pericope;
+namespace PHPericope;
 
 class Verse {
 
