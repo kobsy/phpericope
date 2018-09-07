@@ -3,6 +3,7 @@ namespace PHPericope;
 
 require_once 'pericope/data.php';
 require_once 'pericope/Verse.php';
+require_once 'pericope/Range.php';
 
 class Pericope {
 

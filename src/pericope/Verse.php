@@ -35,6 +35,16 @@ class Verse {
     return new static($book, $chapter, $verse, $letter);
   }
 
+  public function versecmp($other) {
+    if($this->book != $other->book) return $this->book < $other->book ? -1 : 1;
+    if($this->chapter != $other->chapter) return $this->chapter < $other->chapter ? -1 : 1;
+    if($this->verse != $other->verse) return $this->verse < $other->verse ? -1 : 1;
+    $this_letter = is_null($this->letter) ? 'a' : $this->letter;
+    $other_letter = is_null($other->letter) ? 'a' : $other->letter;
+    if($this_letter != $other_letter) return $this_letter < $other_letter ? -1 : 1;
+    return 0;
+  }
+
   public function number() {
     return $this->book * 1000000 + $this->chapter * 1000 + verse;
   }
