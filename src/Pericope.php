@@ -60,7 +60,7 @@ class Pericope {
   }
 
   private static function letters() {
-    return range('a', self::max_letter).implode();
+    return implode(range('a', self::max_letter));
   }
 
 }
