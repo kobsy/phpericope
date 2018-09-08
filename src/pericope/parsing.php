@@ -40,16 +40,16 @@ function split($text) {
 
   foreach(match_all($text) as $matched) {
     $pretext = substr($text, $start, $matched['offset'] - $start);
-    if(sizeof($pretext) > 0) $segments[] = $pretext;
+    if(strlen($pretext) > 0) $segments[] = $pretext;
 
     $pericope = new Pericope($matched);
     $segments[] = $pericope;
 
-    $start = $matched['offset'] + sizeof($matched['original_string']);
+    $start = $matched['offset'] + strlen($matched['original_string']);
   }
 
-  $posttext = substr($text, $start, sizeof($text) - $start);
-  if(sizeof($posttext) > 0) $segments[] = $pretext;
+  $posttext = substr($text, $start);
+  if(strlen($posttext) > 0) $segments[] = $posttext;
 
   return $segments;
 }
@@ -62,17 +62,17 @@ function match_one($text) {
 
 function match_all($text) {
   $matched = array();
-  preg_match_all(Pericope::regexp(), $text, $matches, PREG_OFFSET_CAPTURE);
+  preg_match_all(Pericope::regexp(), $text, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
   foreach($matches as $match) {
     $full_match = array_shift($match);
     $book_index = 0;
-    if(sizeof($match[0][0]) == 0) {
-      while(sizeof(next($match)[0]) == 0) ;
+    if($match[0][1] < 0) {
+      while(next($match)[1] < 0) ;
       $book_index = key($match);
     }
     $book = BOOK_IDS[$book_index];
 
-    $ranges = parse_reference($book, $match[67][0]);
+    $ranges = parse_reference($book, $match[66][0]);
 
     if(count($ranges) > 0) {
       $matched[] = array('original_string' => $full_match[0], 'book' => $book, 'ranges' => $ranges, 'offset' => $full_match[1]);
@@ -83,7 +83,7 @@ function match_all($text) {
 }
 
 function parse_reference($book, $reference) {
-  return parse_ranges($book, preg_split(normalize_reference($reference), '/[,;]'));
+  return parse_ranges($book, preg_split('/[,;]/', normalize_reference($reference)));
 }
 
 function normalize_reference($reference) {
@@ -95,7 +95,7 @@ function normalize_reference($reference) {
 
 function parse_ranges($book, $ranges) {
   $default_chapter = null;
-  if(Pericope::has_chapters($book)) $default_chapter = 1;
+  if(!Pericope::has_chapters($book)) $default_chapter = 1;
   $default_verse = null;
 
   $parsed_ranges = array();
@@ -103,7 +103,7 @@ function parse_ranges($book, $ranges) {
     $range_ends = explode('-', $range, 2);
     $range_begin_string = $range_ends[0];
     $range_end_string = $range_begin_string;
-    if(sizeof($range_ends) > 1) $range_end_string = $range_ends[1];
+    if(count($range_ends) > 1) $range_end_string = $range_ends[1];
 
     $range_begin = parse_reference_fragment($range_begin_string, $default_chapter, $default_verse);
 
@@ -121,7 +121,7 @@ function parse_ranges($book, $ranges) {
     if($range_begin_string == $range_end_string && !$chapter_range) {
       $range_end = clone $range_begin;
     } else {
-      $range_end = parse_reference_fragment($range_end_string, ($chapter_range ? $range_begin->chapter : null));
+      $range_end = parse_reference_fragment($range_end_string, ($chapter_range ? null : $range_begin->chapter));
       $range_end->chapter = to_valid_chapter($book, $range_end->chapter);
 
       // treat Mark 3-1 as Mark 3-3 and, eventually, Mark 3:1-35
@@ -156,19 +156,19 @@ function parse_ranges($book, $ranges) {
 }
 
 function parse_reference_fragment($input, $default_chapter=null, $default_verse=null) {
-  preg_match(Pericope::fragment_regexp(), $input, $matches, PREG_UNMATCHED_AS_NULL);
-  $chapter = $matches['chapter'];
-  $verse = $matches['verse'];
-  $letter = $matches['letter'];
-  if(is_null($chapter)) $chapter = $default_chapter;
+  preg_match(Pericope::fragment_regexp(), $input, $matches);
+  $chapter = array_key_exists('chapter', $matches) ? $matches['chapter'] : null;
+  $verse = array_key_exists('verse', $matches) ? $matches['verse'] : null;
+  $letter = array_key_exists('letter', $matches) ? $matches['letter'] : null;
+  if(strlen($chapter) == 0) $chapter = $default_chapter;
   if(is_null($chapter)) {
     $chapter = $verse;
     $verse = null;
   }
-  if(is_null($verse)) $verse = $default_verse;
+  if(is_null($verse) || strlen($verse) == 0) $verse = $default_verse;
   if(is_null($verse)) $letter = null;
 
-  return new ReferenceFragment(intval($chapter), is_null($verse) ? null : intval(verse), $letter);
+  return new ReferenceFragment(intval($chapter), isset($verse) ? intval($verse) : null, $letter);
 }
 
 function to_valid_chapter($book, $chapter) {

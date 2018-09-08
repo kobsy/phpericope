@@ -4,7 +4,7 @@ namespace PHPericope;
 class Verse {
 
   public $book;
-  public $chaper;
+  public $chapter;
   public $verse;
   public $letter;
 
@@ -22,9 +22,9 @@ class Verse {
   public static function parse($input) {
     if(is_null($input)) return null;
     $id = intval($input);
-    $book = $id / 1000000;             // the book is everything left of the least significant 6 digits
-    $chapter = ($id % 1000000) / 1000; // the chapter is the 3rd through 6th most significant digits
-    $verse = $id % 1000;               // the verse is the 3 least significant digits
+    $book = floor($id / 1000000);             // the book is everything left of the least significant 6 digits
+    $chapter = floor(($id % 1000000) / 1000); // the chapter is the 3rd through 6th most significant digits
+    $verse = $id % 1000;                      // the verse is the 3 least significant digits
     $letter = null;
     if(is_string($input)) {
       if(preg_match(Pericope::letter_regexp(), $input, $matches)) {
@@ -46,7 +46,7 @@ class Verse {
   }
 
   public function number() {
-    return $this->book * 1000000 + $this->chapter * 1000 + verse;
+    return $this->book * 1000000 + $this->chapter * 1000 + $this->verse;
   }
 
   public function to_id() {
@@ -54,7 +54,7 @@ class Verse {
   }
 
   public function to_string($with_chapter = false) {
-    return $with_chapter ? $this->chapter . ':' . $this->verse . $this->letter : $this->verse . $this.letter;
+    return $with_chapter ? $this->chapter . ':' . $this->verse . $this->letter : $this->verse . $this->letter;
   }
 
   public function __toString() {
@@ -75,7 +75,7 @@ class Verse {
   }
 
   public function next() {
-    if($this->is_partial() && ($next_letter = chr(ord($this->letter) + 1)) <= Pericope::max_letter) {
+    if($this->is_partial() && ($next_letter = chr(ord($this->letter) + 1)) <= Pericope::$max_letter) {
       return new static($this->book, $this->chapter, $this->verse, $next_letter);
     }
 

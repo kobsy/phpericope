@@ -48,8 +48,8 @@ class Pericope {
     return $this->_book_chapter_count;
   }
 
-  public function to_string($options) {
-    return "$this->book_name() $this->well_formatted_reference($options)";
+  public function to_string($options=null) {
+    return $this->book_name() . ' ' . $this->well_formatted_reference($options);
   }
 
   public function __toString() {
@@ -97,7 +97,7 @@ class Pericope {
       self::$_normalizations = array(
         array('pattern' => '/(\\d+)[".](\\d+)/', 'replacement' => '$1:$2'),
         array('pattern' => '/[–—]/', 'replacement' => '-'),
-        array('pattern' => "/[^0-9,:;\\-–—$letters]/", '')
+        array('pattern' => "/[^0-9,:;\\-–—$letters]/", 'replacement' => '')
       );
     }
     return self::$_normalizations;
@@ -118,6 +118,7 @@ class Pericope {
 
   private static $_regexp;
   private static $_book_pattern;
+  private static $_normalizations;
   private static $_fragment_regexp;
 
   private $_book_name;
@@ -128,7 +129,7 @@ class Pericope {
 
     $verse_range_separator = array_key_exists('verse_range_separator', $options) ? $options['verse_range_separator'] : "–"; // en-dash
     $chapter_range_separator = array_key_exists('chapter_range_separator', $options) ? $options['chapter_range_separator'] : "—"; // em-dash
-    $verse_list_separator = array_key_exists('verse_list_separator', $options) ? $options['verse_range_separator'] : ", ";
+    $verse_list_separator = array_key_exists('verse_list_separator', $options) ? $options['verse_list_separator'] : ", ";
     $chapter_list_separator = array_key_exists('chapter_list_separator', $options) ? $options['chapter_list_separator'] : "; ";
     $always_print_verse_range = array_key_exists('always_print_verse_range', $options) ? $options['always_print_verse_range'] : false;
     if(!$this->book_has_chapters()) $always_print_verse_range = true;
@@ -182,11 +183,7 @@ class Pericope {
       $parsed_verse = Verse::parse($verse);
       if(!is_null($parsed_verse)) $parsed_verses[] = $parsed_verse;
     }
-    $verse_cmp = function($a, $b) {
-      // Don't just use the spaceship operator for compatibility with PHP 5!
-      if($a->number() == $b->number()) return 0;
-      return ($a->number() < $b->number()) ? -1 : 1;
-    };
+    $verse_cmp = function($a, $b) { return $a->versecmp($b); };
     usort($parsed_verses, $verse_cmp);
 
     $ranges = array();
@@ -194,7 +191,7 @@ class Pericope {
     $range_end = $range_begin;
 
     while($verse = array_shift($parsed_verses)) {
-      if($verse->number() > $range_end->next()) {
+      if($verse->versecmp($range_end->next()) > 0) {
         $ranges[] = new Range($range_begin, $range_end);
         $range_begin = $range_end = $verse;
       } else {
@@ -215,7 +212,7 @@ class Pericope {
   private static function reference_pattern() {
     $number = '\d{1,3}';
     $letters = self::letters();
-    $verse = "$number[$letters]?";
+    $verse = "$number" . "[$letters]?";
     $chapter_verse_separator = '\s*[:"\.]\s*';
     $list_or_range_separator = '\s*[\-–—,;]\s*';
     $chapter_and_verse = "(?:$number$chapter_verse_separator)?$verse";
@@ -224,7 +221,7 @@ class Pericope {
   }
 
   private static function letters() {
-    return implode(range('a', self::max_letter));
+    return implode(range('a', self::$max_letter));
   }
 
 }
