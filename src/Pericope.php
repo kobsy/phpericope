@@ -34,6 +34,40 @@ class Pericope {
     if(is_null($this->book)) throw new InvalidArgumentException("must specify book");
   }
 
+  public function book_has_chapters() {
+    return $this->book_chapter_count() > 1;
+  }
+
+  public function book_name() {
+    if(!isset($this->_book_name)) $this->_book_name = BOOK_NAMES[$this->book];
+    return $this->_book_name;
+  }
+
+  public function book_chapter_count() {
+    if(!isset($this->_book_chapter_count)) $this->_book_chapter_count = BOOK_CHAPTER_COUNTS[$this->book];
+    return $this->_book_chapter_count;
+  }
+
+  public function to_string($options) {
+    return "$this->book_name() $this->well_formatted_reference($options)";
+  }
+
+  public function __toString() {
+    $this->to_string();
+  }
+
+  public function intersects($other) {
+    if(!($other instanceof Pericope)) return false;
+    if($this->book != $other->book) return false;
+
+    foreach($this->ranges as $self_range) {
+      foreach($other->ranges as $other_range) {
+        if($self_range->end->versecmp($other_range->begin) > -1 && $self_range->begin->versecmp($other_range->end) < 1) return true;
+      }
+    }
+
+    return false;
+  }
 
   public static function has_chapters($book) {
     return BOOK_CHAPTER_COUNTS[$book] > 1;
@@ -86,6 +120,59 @@ class Pericope {
   private static $_book_pattern;
   private static $_fragment_regexp;
 
+  private $_book_name;
+  private $_book_chapter_count;
+
+  private function well_formatted_reference($options) {
+    if(is_null($options)) $options = array();
+
+    $verse_range_separator = array_key_exists('verse_range_separator', $options) ? $options['verse_range_separator'] : "–"; // en-dash
+    $chapter_range_separator = array_key_exists('chapter_range_separator', $options) ? $options['chapter_range_separator'] : "—"; // em-dash
+    $verse_list_separator = array_key_exists('verse_list_separator', $options) ? $options['verse_range_separator'] : ", ";
+    $chapter_list_separator = array_key_exists('chapter_list_separator', $options) ? $options['chapter_list_separator'] : "; ";
+    $always_print_verse_range = array_key_exists('always_print_verse_range', $options) ? $options['always_print_verse_range'] : false;
+    if(!$this->book_has_chapters()) $always_print_verse_range = true;
+
+    $recent_chapter = null; // e.g., in 12:1-8, remember that 12 is the chapter when we parse the 8
+    if(!$this->book_has_chapters()) $recent_chapter = 1;
+    $recent_verse = null;
+
+    $output = "";
+    foreach($this->ranges as $i => $range) {
+      if($i > 0) {
+        if($recent_chapter == $range->begin->chapter) {
+          $output .= $verse_list_separator;
+        } else {
+          $output .= $chapter_list_separator;
+        }
+      }
+
+      $last_verse = self::get_max_verse($this->book, $range->end->chapter);
+      if(!$always_print_verse_range && $range->begin->verse == 1 && $range->begin->is_whole() && ($range->end->verse > $last_verse || $range->end->is_whole() && $range->end->verse == $last_verse)) {
+        $output .= $range->begin->chapter;
+        if($range->end->chapter > $range->begin->chapter) $output .= $chapter_range_separator . $range->end->chapter;
+      } else {
+        if($range->begin->is_partial() && $range->begin->verse == $recent_verse) {
+          $output .= $range->begin->letter;
+        } else {
+          $output .= $range->begin->to_string($recent_chapter != $range->begin->chapter);
+        }
+
+        if($range->begin->versecmp($range->end) != 0) {
+          if($range->begin->chapter == $range->end->chapter) {
+            $output .= $verse_range_separator . $range->end->to_string();
+          } else {
+            $output .= $chapter_range_separator . $range->end->to_string(true);
+          }
+        }
+
+        $recent_chapter = $range->end->chapter;
+        if($range->end->is_partial()) $recent_verse = $range->end->verse;
+      }
+    }
+
+    return $output;
+  }
 
   private function group_array_into_ranges($verses) {
     if(is_null($verses) || count($verses) == 0) return array();
