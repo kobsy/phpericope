@@ -86,7 +86,7 @@ class Pericope {
     if(!isset(self::$_regexp)) {
       $book_pattern = self::book_pattern();
       $reference_pattern = self::reference_pattern();
-      self::$_regexp = "/$book_pattern\\.?\\s*($reference_pattern)/i";
+      self::$_regexp = "/$book_pattern\\.?\\s*($reference_pattern)/iu";
     }
     return self::$_regexp;
   }
@@ -96,8 +96,8 @@ class Pericope {
       $letters = self::letters();
       self::$_normalizations = array(
         array('pattern' => '/(\\d+)[".](\\d+)/', 'replacement' => '$1:$2'),
-        array('pattern' => '/[–—]/', 'replacement' => '-'),
-        array('pattern' => "/[^0-9,:;\\-–—$letters]/", 'replacement' => '')
+        array('pattern' => '/[–—]/u', 'replacement' => '-'),
+        array('pattern' => "/[^0-9,:;\\-–—$letters]/u", 'replacement' => '')
       );
     }
     return self::$_normalizations;
