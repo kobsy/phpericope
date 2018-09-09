@@ -332,6 +332,29 @@ final class PericopeTest extends TestCase {
     }
   }
 
+  public function testToArrayReturnsAnArrayOfVerses() {
+    $tests = array(
+      'Genesis 1:1'       => array('1001001'),
+      'John 20:19–23'     => array('43020019', '43020020', '43020021', '43020022', '43020023'),
+      'Psalm 1'           => array('19001001', '19001002', '19001003', '19001004', '19001005', '19001006'),
+      'Psalm 122:6—124:2' => array('19122006', '19122007', '19122008', '19122009', '19123001', '19123002', '19123003', '19123004', '19124001', '19124002'),
+      'Romans 3:1–4a'     => array('45003001', '45003002', '45003003', '45003004a'),
+      'Romans 3:1–4b'     => array('45003001', '45003002', '45003003', '45003004a', '45003004b'),
+      'Romans 3:1b–4'     => array('45003001b', '45003001c', '45003001d', '45003002', '45003003', '45003004'),
+      'Romans 3:1b, 2–4'  => array('45003001b', '45003002', '45003003', '45003004'),
+      'Luke 1:17a, d'     => array('42001017a', '42001017d')
+    );
+
+    foreach($tests as $reference => $expected_verses) {
+      $actual_verses = array();
+      $pericope = PHPericope\parse_one($reference);
+      foreach($pericope->to_array() as $verse) {
+        $actual_verses[] = $verse->to_id();
+      }
+      $this->assertEquals($expected_verses, $actual_verses);
+    }
+  }
+
 }
 
 ?>

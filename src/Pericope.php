@@ -69,6 +69,20 @@ class Pericope {
     return false;
   }
 
+  public function each_verse() {
+    foreach($this->ranges as $range) {
+      foreach($range->each_verse() as $verse) {
+        yield $verse;
+      }
+    }
+  }
+
+  public function to_array() {
+    $array = array();
+    foreach($this->each_verse() as $verse) { $array[] = $verse; }
+    return $array;
+  }
+
   public static function has_chapters($book) {
     return BOOK_CHAPTER_COUNTS[$book] > 1;
   }
