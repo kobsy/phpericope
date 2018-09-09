@@ -13,7 +13,7 @@ class Range {
   public function each_verse() {
     if($this->begin == $this->end) {
       yield $this->begin;
-      return $this;
+      return;
     }
 
     $current = $this->begin;
