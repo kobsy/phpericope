@@ -18,6 +18,7 @@
         "phpunit/phpunit": "^5"
     },
     "autoload": {
-        "psr-4": {"PHPericope\\": "src/"}
+        "psr-4": {"PHPericope\\": "src/"},
+        "files": ["src/pericope/data.php", "src/pericope/parsing.php"]
     }
 }
